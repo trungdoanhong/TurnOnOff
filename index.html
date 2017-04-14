@@ -23,6 +23,26 @@
       <script src='https://api.cloudmqtt.com/sso/js/mqttws31.js' type='text/javascript'></script>
       <h2>Websocket - MQTT</h2>
       <div class='alert alert-error' id='error' style='display: none'></div>
+	  <div class="alert alert-success" id='success' style='display: none'></div>
+	  <div class="alert alert-info" id='info' style='display: none'></div>
+	  <div>
+		<table>
+			<tr>
+				<th>Host<br> <input id="host" type="text" style="text-align:center" value="m12.cloudmqtt.com"></th>
+				<th>Port<br> <input id="port" type="text" style="text-align:center" value="37387"></th> 
+			</tr>
+			<tr>
+				<th>UserName<br> <input id="username" type="text" style="text-align:center" value="kkeqionk"></th>
+				<th>Password<br> <input id="password" type="text" style="text-align:center" value="iMTZqUQAqKjb"></th> 
+			</tr>
+			<tr>
+			</tr>
+		</table>
+		<button class='btn btn-block' onclick="ConnectCloudMQTT()" style="width:150px">
+              Connect
+        </button>
+	  </div>
+	  <br><br>
       <div class='row'>
         <div class='span3'>
           <h3>Send message</h3>
@@ -54,7 +74,8 @@
       </style>
       <script>
         var form = document.forms["send"];
-        form.addEventListener("submit", function (e) {
+        form.addEventListener("submit", function (e) 
+		{
           e.preventDefault();
           message = new Paho.MQTT.Message(document.getElementById("message").value);
           message.destinationName = document.getElementById("topic").value;
@@ -62,29 +83,45 @@
         });
         
         // called when the client connects
-        function onConnect() {
+        function onConnect() 
+		{
           // Once a connection has been made, make a subscription and send a message.
           console.log("onConnect");
+		  
+		  infDiv.textContent = "";
+		  infDiv.style.display= "none";
+          errDiv.textContent = "";
+		  errDiv.style.display = "none";
+		  sucDiv.textContent = "Connect successfully !";
+		  sucDiv.style.display = "block";
+		  
           client.subscribe("#");
+		  IsConnected = true;
         }
         
         // called when the client loses its connection
-        function onConnectionLost(responseObject) {
-          if (responseObject.errorCode !== 0) {
+        function onConnectionLost(responseObject) 
+		{
+          if (responseObject.errorCode !== 0) 
+		  {
             console.log("onConnectionLost:", responseObject.errorMessage);
             setTimeout(function() { client.connect() }, 5000);
           }
         }
         
         // called when a message arrives
-        function onMessageArrived(message) {
+        function onMessageArrived(message) 
+		{
           var tdTopic = document.createElement("td");
           tdTopic.textContent = message.destinationName;
         
           var tdMsg = document.createElement("td");
-          try {
+          try 
+		  {
             tdMsg.textContent = message.payloadString;
-          } catch (e) {
+          } 
+		  catch (e) 
+		  {
             //tdMsg.textContent = "*** Binary data ***";
             var pre = document.createElement("pre");
             var base64 = btoa(String.fromCharCode.apply(null, message.payloadBytes));
@@ -102,33 +139,85 @@
           document.getElementById("msgs").appendChild(tr);
         }
         
-        function onFailure(invocationContext, errorCode, errorMessage) {
-          var errDiv = document.getElementById("error");
-          errDiv.textContent = "Could not connect to WebSocket server, most likely you're behind a firewall that doesn't allow outgoing connections to port 37387";
+        function onFailure(invocationContext, errorCode, errorMessage) 
+		{
+		  infDiv.textContent = "";
+		  infDiv.style.display = "none";
+          errDiv.textContent = "Connect failed !";
           errDiv.style.display = "block";
+		  sucDiv.textContent = "";
+		  sucDiv.style.display = "none";
+		  
+		  IsConnected = false;
         }
+		
+		var infDiv = document.getElementById("info");
+		var errDiv = document.getElementById("error");
+		var sucDiv = document.getElementById("success");
+		  
+		infDiv.textContent = "Connecting ...";
+		infDiv.style.display = "block";
+		
+		var IsConnected = false;
 		
 		var Host = "m12.cloudmqtt.com";
 		var Port = 37387;
-		var UserName = "kkeqionk";
-		var Password = "iMTZqUQAqKjb";
+		var UserName = "wind2115";
+		var Password = "841566";
+		
+		var clientId = "ws" + Math.random();
+		// Create a client instance
+		var client = new Paho.MQTT.Client(Host, Port, clientId);
+		
+		// set callback handlers
+		client.onConnectionLost = onConnectionLost;
+		client.onMessageArrived = onMessageArrived;
+		
+		// connect the client
+		client.connect(
+		{
+		  useSSL: true,
+		  userName: UserName,
+		  password: Password,
+		  onSuccess: onConnect,
+		  onFailure: onFailure
+		});
+		
+		function ConnectCloudMQTT()
+		{
+			if (IsConnected == true)
+				client.disconnect();
+		
+			Host = document.getElementById("host").value;
+			Port = document.getElementById("port").value;
+			UserName = document.getElementById("username").value;
+			Password = document.getElementById("password").value;
+			
+			clientId = "ws" + Math.random();
+			// Create a client instance
+			client = new Paho.MQTT.Client(Host, parseInt(Port), clientId);
+			
+			// set callback handlers
+			client.onConnectionLost = onConnectionLost;
+			client.onMessageArrived = onMessageArrived;
+			
+			// connect the client
+			client.connect({
+			  useSSL: true,
+			  userName: UserName,
+			  password: Password,
+			  onSuccess: onConnect,
+			  onFailure: onFailure
+			});
+			
+			infDiv.textContent = "Connecting ...";
+			infDiv.style.display = "block";
+			sucDiv.textContent = "";
+			sucDiv.style.display = "none";
+			errDiv.textContent = "";
+			errDiv.style.display = "none";
+		}        
         
-        var clientId = "ws" + Math.random();
-        // Create a client instance
-        var client = new Paho.MQTT.Client(Host, Port, clientId);
-        
-        // set callback handlers
-        client.onConnectionLost = onConnectionLost;
-        client.onMessageArrived = onMessageArrived;
-        
-        // connect the client
-        client.connect({
-          useSSL: true,
-          userName: UserName,
-          password: Password,
-          onSuccess: onConnect,
-          onFailure: onFailure
-        });
       </script>
     </div>
   </body>
