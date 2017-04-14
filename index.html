@@ -107,10 +107,15 @@
           errDiv.textContent = "Could not connect to WebSocket server, most likely you're behind a firewall that doesn't allow outgoing connections to port 37387";
           errDiv.style.display = "block";
         }
+		
+		var Host = "m12.cloudmqtt.com";
+		var Port = 37387;
+		var UserName = "kkeqionk";
+		var Password = "iMTZqUQAqKjb";
         
         var clientId = "ws" + Math.random();
         // Create a client instance
-        var client = new Paho.MQTT.Client("m12.cloudmqtt.com", 37387, clientId);
+        var client = new Paho.MQTT.Client(Host, Port, clientId);
         
         // set callback handlers
         client.onConnectionLost = onConnectionLost;
@@ -119,8 +124,8 @@
         // connect the client
         client.connect({
           useSSL: true,
-          userName: "kkeqionk",
-          password: "iMTZqUQAqKjb",
+          userName: UserName,
+          password: Password,
           onSuccess: onConnect,
           onFailure: onFailure
         });
