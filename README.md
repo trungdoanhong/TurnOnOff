@@ -1,2 +1,2 @@
-# TurnOnOff
-Example for controlling on, off your electronic device
+# Websocket-MQTT
+Example for using MQTT
