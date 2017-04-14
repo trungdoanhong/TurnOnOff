@@ -1,11 +1,166 @@
+
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>
-			Hello World
-		</title>
-	</head>
-	<body>
-		<p align="center" style="font-size:30px">Hello World</p>
-	</body>
+  <head>
+    <title>CloudMQTT Websocket Console</title>
+    <link href='//fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
+    <link href='https://api.cloudmqtt.com/sso/css/bootstrap.min.css' rel='stylesheet' type='text/css'>
+    <script src='https://api.cloudmqtt.com/sso/js/jquery.min.js' type='text/javascript'></script>
+    <script src='https://api.cloudmqtt.com/sso/js/bootstrap.min.js' type='text/javascript'></script>
+    <style>
+      body, input, button, select, textarea {
+        font-family: 'Lato', sans-serif;
+        font-size: .8em;
+      }
+      #appharbor li { line-height: inherit; }
+      .inline-block { display: inline-block; }
+    </style>
+  </head>
+  <body>
+    
+    <div class='container'>
+      <div class='page-header'>
+        <h1>
+          CloudMQTT Console
+          <small class='pull-right'>
+            <a class='btn' href='console'>
+              <i class='icon-off'></i>
+              Overview
+            </a>
+            <a class='btn' href='websocket'>
+              <i class='icon-play-circle'></i>
+              Websocket UI
+            </a>
+            <a class='btn' href='log'>
+              <i class='icon-list'></i>
+              Server log
+            </a>
+            <form action='https://cloudmqtt-mgmt.herokuapp.com/sso' class='form-inline' id='form' method='post' style='display: inline-block'>
+              <input name='name' type='hidden' value='kkeqionk'>
+              <input name='password' type='hidden' value='iMTZqUQAqKjb'>
+              <input name='hostname' type='hidden' value='m12.cloudmqtt.com'>
+              <input name='port' type='hidden' value='17387'>
+              <input name='token' type='hidden' value='9ae574b96777853058dd01ab2214077ab8437509'>
+              <input name='timestamp' type='hidden' value='1492127672'>
+              <button class='btn'>
+                <i class='icon-signal'></i>
+                Statistics
+              </button>
+            </form>
+            <form action='restart' class='form-inline' method='post' onsubmit="return confirm('Are you sure you want to restart your instance?')" style='display: inline-block'>
+              <button class='btn' type='submit'>
+                <i class='icon-refresh'></i>
+                Restart
+              </button>
+            </form>
+          </small>
+        </h1>
+      </div>
+      <script src='https://api.cloudmqtt.com/sso/js/mqttws31.js' type='text/javascript'></script>
+      <h2>Websocket</h2>
+      <div class='alert alert-error' id='error' style='display: none'></div>
+      <div class='row'>
+        <div class='span3'>
+          <h3>Send message</h3>
+          <form id='send'>
+            <label>Topic</label>
+            <input id='topic' name='topic'>
+            <label>Message</label>
+            <textarea id='message' name='message'></textarea>
+            <button class='btn btn-block'>
+              Send
+            </button>
+          </form>
+        </div>
+        <div class='span9'>
+          <h3>Received messages</h3>
+          <table class='table'>
+            <thead>
+              <tr>
+                <th>Topic</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody id='msgs'></tbody>
+          </table>
+        </div>
+      </div>
+      <style>
+        pre { font-size: 11px; }
+      </style>
+      <script>
+        var form = document.forms["send"];
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          message = new Paho.MQTT.Message(document.getElementById("message").value);
+          message.destinationName = document.getElementById("topic").value;
+          client.send(message);
+        });
+        
+        // called when the client connects
+        function onConnect() {
+          // Once a connection has been made, make a subscription and send a message.
+          console.log("onConnect");
+          client.subscribe("#");
+        }
+        
+        // called when the client loses its connection
+        function onConnectionLost(responseObject) {
+          if (responseObject.errorCode !== 0) {
+            console.log("onConnectionLost:", responseObject.errorMessage);
+            setTimeout(function() { client.connect() }, 5000);
+          }
+        }
+        
+        // called when a message arrives
+        function onMessageArrived(message) {
+          var tdTopic = document.createElement("td");
+          tdTopic.textContent = message.destinationName;
+        
+          var tdMsg = document.createElement("td");
+          try {
+            tdMsg.textContent = message.payloadString;
+          } catch (e) {
+            //tdMsg.textContent = "*** Binary data ***";
+            var pre = document.createElement("pre");
+            var base64 = btoa(String.fromCharCode.apply(null, message.payloadBytes));
+            pre.textContent = base64.replace(/(.{72})/g, "$1\n");
+            var note = document.createElement("em");
+            note.textContent = "Binary data (base64 encoded)"
+            tdMsg.appendChild(note);
+            tdMsg.appendChild(pre)
+          }
+        
+          var tr = document.createElement("tr");
+          tr.appendChild(tdTopic);
+          tr.appendChild(tdMsg);
+        
+          document.getElementById("msgs").appendChild(tr);
+        }
+        
+        function onFailure(invocationContext, errorCode, errorMessage) {
+          var errDiv = document.getElementById("error");
+          errDiv.textContent = "Could not connect to WebSocket server, most likely you're behind a firewall that doesn't allow outgoing connections to port 37387";
+          errDiv.style.display = "block";
+        }
+        
+        var clientId = "ws" + Math.random();
+        // Create a client instance
+        var client = new Paho.MQTT.Client("m12.cloudmqtt.com", 37387, clientId);
+        
+        // set callback handlers
+        client.onConnectionLost = onConnectionLost;
+        client.onMessageArrived = onMessageArrived;
+        
+        // connect the client
+        client.connect({
+          useSSL: true,
+          userName: "kkeqionk",
+          password: "iMTZqUQAqKjb",
+          onSuccess: onConnect,
+          onFailure: onFailure
+        });
+      </script>
+    </div>
+  </body>
 </html>
